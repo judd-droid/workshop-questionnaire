@@ -294,7 +294,9 @@ const FinancialQuestionnaire = () => {
         <div ref={resultRef} className="max-w-2xl w-full bg-white rounded-3xl shadow-xl overflow-hidden">
           {/* Persona header */}
           <div className={`p-8 bg-gradient-to-r ${persona.gradient} text-white`}>
-            <p className="text-white/90 text-sm mb-2">Hi {answers.name || 'there'} 👋</p>
+            <p className="text-white/90 text-sm mb-2">
+              Hi {answers.name || 'there'}! <span className="opacity-95">You're a:</span>
+            </p>
             <h2 className="text-2xl md:text-3xl font-bold">{persona.name}</h2>
             <p className="mt-3 opacity-95">{persona.lines[0]}</p>
             <p className="opacity-95">{persona.lines[1]}</p>
