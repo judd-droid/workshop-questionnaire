@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { ChevronRight, ChevronLeft, CheckCircle2, TrendingUp, Camera } from 'lucide-react';
-import { toPng } from 'html-to-image';
 
 const FinancialQuestionnaire = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -221,6 +220,7 @@ const FinancialQuestionnaire = () => {
   const saveImage = async () => {
     if (!resultRef.current) return;
     try {
+      const { toPng } = await import('html-to-image'); // lazy-load
       const dataUrl = await toPng(resultRef.current, { cacheBust: true, pixelRatio: 2 });
       const a = document.createElement('a');
       a.href = dataUrl;
