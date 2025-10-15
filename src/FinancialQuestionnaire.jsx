@@ -481,9 +481,6 @@ const FinancialQuestionnaire = () => {
             
             {/* inline status note */}
             <div className="mt-2 text-center" aria-live="polite">
-              {bookingStatus === 'sent' && (
-                <span className="text-emerald-700">Got it! I’ll reach out with times.</span>
-              )}
               {bookingStatus === 'error' && (
                 <span className="text-rose-700">Hmm, that didn’t go through. Try again?</span>
               )}
