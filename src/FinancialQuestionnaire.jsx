@@ -21,6 +21,11 @@ const FinancialQuestionnaire = () => {
   const [bookingOption, setBookingOption] = useState('');
   const [mobile, setMobile] = useState('');
 
+  // near your other useState calls
+  const [responseId] = useState(() =>
+    `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
+
   // open booking page
   const onBook = () => setShowBooking(true);
   
@@ -29,9 +34,26 @@ const FinancialQuestionnaire = () => {
   
   // optional: you can POST these to Sheets later if you want
   const submitBooking = async () => {
-    if (!canSubmitBooking) return;
-    // placeholder action for now
-    console.log('Booking choice:', bookingOption, 'Mobile:', mobile);
+    if (!SCRIPT_URL || !canSubmitBooking) return;
+    const payload = {
+      responseId,                      // <-- same ID ties this to their row
+      bookingOption,
+      mobile,
+      ua: navigator.userAgent,
+      ref: document.referrer
+    };
+    try {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+        mode: 'no-cors'
+      });
+      // Optional: small UX signal
+      alert('Got it! I’ll text you shortly.');
+    } catch (e) {
+      console.error('Booking submit failed', e);
+    }
   };
     
   const SCRIPT_URL = import.meta.env.VITE_SHEETS_WEBAPP_URL;
@@ -43,7 +65,7 @@ const FinancialQuestionnaire = () => {
     }
     const payload = {
       ...answers,
-      responseId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      responseId,
       ua: navigator.userAgent,
       ref: document.referrer
     };
