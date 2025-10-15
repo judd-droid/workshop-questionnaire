@@ -17,7 +17,23 @@ const FinancialQuestionnaire = () => {
     topConcern: ''
   });
   const [showSummary, setShowSummary] = useState(false);
+  const [showBooking, setShowBooking] = useState(false);
+  const [bookingOption, setBookingOption] = useState('');
+  const [mobile, setMobile] = useState('');
 
+  // open booking page
+  const onBook = () => setShowBooking(true);
+  
+  // optional: basic validation
+  const canSubmitBooking = bookingOption && mobile.trim().length >= 10;
+  
+  // optional: you can POST these to Sheets later if you want
+  const submitBooking = async () => {
+    if (!canSubmitBooking) return;
+    // placeholder action for now
+    console.log('Booking choice:', bookingOption, 'Mobile:', mobile);
+  };
+    
   const SCRIPT_URL = import.meta.env.VITE_SHEETS_WEBAPP_URL;
 
   const submitResponses = useCallback(async () => {
@@ -342,6 +358,101 @@ const FinancialQuestionnaire = () => {
     // TODO: wire up Calendly/WhatsApp/your booking flow here
     console.log('Book Personalized Consultation clicked');
   };
+
+  // --------------------------
+  // Show Booking
+  // --------------------------
+  if (showBooking) {
+    const options = [
+      { id: 'today', label: 'Today' },
+      { id: 'next_week', label: "Next week — let's find a common time" },
+      { id: 'after_next_week', label: "After next week — let's discuss" }
+    ];
+  
+    const openFacebook = () => {
+      // best effort: try to open FB app, otherwise open in browser
+      const webUrl = 'https://www.facebook.com/juddstamaria';
+      const appUrl = `fb://facewebmodal/f?href=${encodeURIComponent(webUrl)}`;
+      // try app
+      const start = Date.now();
+      window.location.href = appUrl;
+      // fallback to web after a short delay
+      setTimeout(() => {
+        if (Date.now() - start < 1500) window.open(webUrl, '_blank');
+      }, 800);
+    };
+  
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4 flex items-center justify-center">
+        <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-8 md:p-10">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            Pick a time that works for you.
+          </h2>
+          <p className="text-gray-600 mb-6">I’ll reach out with easy options.</p>
+  
+          {/* choices */}
+          <div className="grid grid-cols-1 gap-3 mb-6">
+            {options.map(opt => (
+              <button
+                key={opt.id}
+                onClick={() => setBookingOption(opt.label)}
+                className={`w-full px-6 py-4 text-left rounded-2xl border-2 transition-all text-lg font-medium
+                  ${bookingOption === opt.label
+                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-indigo-300 hover:bg-indigo-50/50'
+                  }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+  
+          {/* mobile input */}
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            How do I contact you?
+          </label>
+          <input
+            type="tel"
+            inputMode="tel"
+            placeholder="e.g., 0917 123 4567"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
+            className="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 focus:border-indigo-500 focus:outline-none transition-colors mb-6"
+          />
+  
+          {/* actions */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={submitBooking}
+              disabled={!canSubmitBooking}
+              className={`flex-1 px-5 py-3 rounded-xl font-semibold transition
+                ${canSubmitBooking
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:scale-[1.01]'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+            >
+              Send My Preference
+            </button>
+  
+            <button
+              onClick={openFacebook}
+              className="flex-1 px-5 py-3 rounded-xl border-2 border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition"
+              title="Open my Facebook profile"
+            >
+              Add me on Facebook!
+            </button>
+          </div>
+  
+          <button
+            onClick={() => setShowBooking(false)}
+            className="mt-6 w-full py-3 px-6 bg-gray-100 text-gray-700 rounded-full font-medium hover:bg-gray-200 transition-colors"
+          >
+            Back to Results
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // --------------------------
   // Summary view
