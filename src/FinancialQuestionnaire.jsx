@@ -549,7 +549,7 @@ const FinancialQuestionnaire = () => {
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
               >
                 {bookingStatus === 'sending' ? 'Sending…'
-                  : bookingStatus === 'sent' ? "Sent! I’ll text you shortly"
+                  : bookingStatus === 'sent' ? "Got it! I’ll text you shortly"
                   : 'Text me the plan'}
               </button>
   
