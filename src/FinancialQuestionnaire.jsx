@@ -456,7 +456,7 @@ const FinancialQuestionnaire = () => {
           {/* Gradient header */}
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-8">
             <h2 className="text-2xl md:text-3xl font-bold">Pick a time that works for you.</h2>
-            <p className="mt-1 text-white/90">Free 15-min chat. No hard sell.</p>
+            <p className="mt-1 text-white/90">Free 30-minute chat, no commitments. Let me help you!</p>
           </div>
   
           <div className="p-6 md:p-8">
