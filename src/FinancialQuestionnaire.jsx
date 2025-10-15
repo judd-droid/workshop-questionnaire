@@ -639,14 +639,14 @@ const FinancialQuestionnaire = () => {
               >
                 Save Snapshot
               </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="border border-indigo-100 bg-indigo-50 text-indigo-600 py-3 rounded-xl text-sm hover:bg-indigo-100 transition-all duration-150"
+              >
+                Start Over
+              </button>
             </div>
 
-            <button
-              onClick={() => window.location.reload()}
-              className="border border-indigo-100 bg-indigo-50 text-indigo-600 py-3 rounded-xl text-sm hover:bg-indigo-100 transition-all duration-150"
-            >
-              Start Over
-            </button>
           </div>
         </div>
       </div>
