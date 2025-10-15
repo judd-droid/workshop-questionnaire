@@ -288,84 +288,114 @@ const FinancialQuestionnaire = () => {
   const persona = useMemo(() => {
     const vals = Object.values(coverage);
     const covered = vals.filter(s => s === 'Covered').length;
-    const wip = vals.filter(s => s === 'Work in Progress').length;
     const gaps = vals.filter(s => s === 'Gap').length;
+    const wip = vals.filter(s => s === 'Work in Progress').length;
   
-    const dep = answers.hasKids === 'Yes' || answers.hasKids === 'Planning to have kids';
+    const { medical, income, emergency, retirement, debt } = coverage;
+  
+    const dep =
+      answers.hasKids === 'Yes' || answers.hasKids === 'Planning to have kids';
     const hasLife = (answers.insuranceCoverage || []).includes('Life Insurance');
-    const efCovered = coverage.emergency === 'Covered';
-    const debtFree = coverage.debt === 'Covered';
-    const retCovered = coverage.retirement === 'Covered';
     const growthIntent =
       answers.topConcern === 'Growing my money' ||
       answers.topConcern === 'Planning for the future';
   
-    // 👉 New top rule: truly at square one
-    if (covered === 0 && gaps >= 3) {
+    // 0) Acute protection risk gets top priority
+    if (medical === 'Gap' || (dep && income === 'Gap')) {
       return {
-        name: 'Foundation Builder',
+        name: 'Guardian in the Making',
         lines: [
-          "You’re fresh on the journey—perfect time to set the basics right.",
-          "We’ll lock in safety nets first so every next step feels easier."
-        ],
-        gradient: 'from-amber-500 to-rose-500'
-      };
-    }
-  
-    // Growth once defenses are in place
-    if (efCovered && retCovered && growthIntent) {
-      return {
-        name: 'Growth-Oriented Planner',
-        lines: [
-          "You’ve nailed the safety nets and you’re eyeing the next level.",
-          "Let’s focus on smart growth moves that match your comfort and goals."
-        ],
-        gradient: 'from-indigo-500 to-emerald-500'
-      };
-    }
-  
-    // Family-first with protection in place
-    if (dep && hasLife) {
-      return {
-        name: 'Family Protector',
-        lines: [
-          "You’re prioritizing your loved ones—solid move.",
-          "We’ll fine-tune the numbers so protection and savings stay balanced."
-        ],
-        gradient: 'from-indigo-500 to-purple-500'
-      };
-    }
-  
-    // Defensive pro, missing retirement engine
-    if (efCovered && debtFree && !retCovered) {
-      return {
-        name: 'Safety-First Guardian',
-        lines: [
-          "Your defenses are tight—great job keeping things stable.",
-          "Next up: build a retirement engine that quietly compounds for you."
-        ],
-        gradient: 'from-teal-500 to-indigo-500'
-      };
-    }
-  
-    // Early momentum: some coverage, some gaps
-    if (gaps >= 2) {
-      return {
-        name: 'Strong Starter',
-        lines: [
-          "You’re getting the essentials on your radar—good start.",
-          "We’ll tackle the big wins first so momentum comes fast."
+          "Job one: cover the big risks so nothing derails you.",
+          "We’ll lock in health cover and income protection, then fill the rest."
         ],
         gradient: 'from-rose-500 to-amber-500'
       };
     }
   
-    // Default
+    // 1) Very early / almost nothing covered
+    if ((covered === 0 && gaps >= 2) || (covered <= 1 && gaps >= 3)) {
+      return {
+        name: 'Safety-Net Starter',
+        lines: [
+          "You’re kicking off—no stress.",
+          "We’ll put the core safety nets in place so every next step feels easier."
+        ],
+        gradient: 'from-amber-500 to-rose-500'
+      };
+    }
+  
+    // 2) Cash-flow stress (debt + low buffer)
+    if ((emergency === 'Gap' || emergency === 'Work in Progress') && debt === 'Gap') {
+      return {
+        name: 'Stability Seeker',
+        lines: [
+          "Let’s create breathing room.",
+          "We’ll build a simple buffer and a debt plan that frees your cash flow."
+        ],
+        gradient: 'from-orange-500 to-rose-500'
+      };
+    }
+  
+    // 3) Family focus with some protection in place
+    if (dep && hasLife && income !== 'Gap') {
+      return {
+        name: 'Family Protector',
+        lines: [
+          "You’re prioritizing your loved ones—strong move.",
+          "We’ll balance protection with savings so everything stays on track."
+        ],
+        gradient: 'from-indigo-500 to-purple-600'
+      };
+    }
+  
+    // 4) Growth ready (defenses done, user wants growth)
+    if (
+      emergency === 'Covered' &&
+      retirement === 'Covered' &&
+      medical !== 'Gap' &&
+      income !== 'Gap' &&
+      growthIntent
+    ) {
+      return {
+        name: 'Growth-Oriented Planner',
+        lines: [
+          "Your bases are covered—you’re ready to level up.",
+          "Let’s choose smart growth moves that fit your comfort and goals."
+        ],
+        gradient: 'from-indigo-600 to-emerald-500'
+      };
+    }
+  
+    // 5) Largely on track; just polish
+    if (covered >= 3 && gaps <= 1) {
+      return {
+        name: 'On-Track Optimizer',
+        lines: [
+          "You’re largely on track.",
+          "We’ll tune contributions and tidy any loose ends."
+        ],
+        gradient: 'from-teal-500 to-indigo-500'
+      };
+    }
+  
+    // 6) Some wins, some gaps → build momentum
+    if (covered >= 1 && gaps >= 1) {
+      return {
+        name: 'Momentum Starter',
+        lines: [
+          "You’ve got a few wins underway.",
+          "We’ll sequence the next 2–3 moves so progress feels quick."
+        ],
+        gradient: 'from-violet-500 to-fuchsia-500'
+      };
+    }
+  
+    // 7) Default
     return {
       name: 'Free-Spirited Builder',
       lines: [
         "You like living in the moment, but you’re laying foundations too.",
-        "Our goal is to keep your YOLO energy—with smart safety nets."
+        "We’ll keep your YOLO energy—with smart safety nets."
       ],
       gradient: 'from-violet-500 to-fuchsia-500'
     };
