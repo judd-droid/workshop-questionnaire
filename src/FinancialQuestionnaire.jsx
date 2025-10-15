@@ -9,7 +9,9 @@ const FinancialQuestionnaire = () => {
     hasKids: '',
     kidsCount: '',
     insuranceCoverage: [],
+    protectionConfidence: '',     // NEW
     retirementPlan: '',
+    retirementConfidence: '',     // NEW
     emergencyFund: '',
     debtSituation: '',
     topConcern: ''
@@ -44,23 +46,57 @@ const FinancialQuestionnaire = () => {
   // --------------------------
   // Questionnaire (same as before)
   // --------------------------
-  const questions = [
+  const allQuestions = [
     { id: 'name', question: "What's your name?", type: 'text', placeholder: 'Your name here' },
-    { id: 'ageRange', question: "Which age bracket are you in?", type: 'choice', options: ['20-29', '30-39', '40-49', '50+'] },
-    { id: 'hasKids', question: "Do you have kids or dependents?", type: 'choice', options: ['Yes', 'No', 'Planning to have kids'] },
-    {
-      id: 'insuranceCoverage', question: "What insurance do you currently have?", subtitle: "Select all that apply",
-      type: 'multiple', options: ['Life Insurance', 'Health/Medical', 'None yet', 'Not sure']
+  
+    { id: 'ageRange', question: "Which age bracket are you in?", type: 'choice',
+      options: ['20-29', '30-39', '40-49', '50+'] },
+  
+    { id: 'hasKids', question: "Do you have kids or dependents?", type: 'choice',
+      options: ['Yes', 'No', 'Planning to have kids'] },
+  
+    { id: 'insuranceCoverage', question: "What insurance do you currently have?",
+      subtitle: "Select all that apply", type: 'multiple',
+      options: ['Life Insurance', 'Health/Medical', 'None yet', 'Not sure'] },
+  
+    // NEW — only if Life Insurance chosen OR has/plan dependents
+    { id: 'protectionConfidence',
+      question: "How does your current protection feel?",
+      subtitle: "No need for numbers—just vibes",
+      type: 'choice',
+      options: ['Feels solid', 'Have some but not sure', 'None yet'],
+      showIf: (a) => (a.insuranceCoverage || []).includes('Life Insurance')
+                || a.hasKids === 'Yes'
+                || a.hasKids === 'Planning to have kids'
     },
+  
     { id: 'retirementPlan', question: "Are you actively saving for retirement?", type: 'choice',
       options: ['Yes, regularly', 'Occasionally', 'Not yet', "What's a retirement plan? 😅"] },
-    { id: 'emergencyFund', question: "Do you have an emergency fund?", subtitle: "3-6 months of expenses saved", type: 'choice',
+  
+    // NEW — always ask after they answered the plan
+    { id: 'retirementConfidence',
+      question: "How does your retirement saving feel?",
+      subtitle: "Go with your gut",
+      type: 'choice',
+      options: ['Feels on track', 'Making a start', 'Not yet'],
+      showIf: (a) => a.retirementPlan !== ''
+    },
+  
+    { id: 'emergencyFund', question: "Do you have an emergency fund?",
+      subtitle: "3-6 months of expenses saved", type: 'choice',
       options: ['Yes, fully funded', 'Working on it', 'Not yet', 'Emergency... what?'] },
+  
     { id: 'debtSituation', question: "How's your debt situation?", type: 'choice',
       options: ['Debt-free! 🎉', 'Manageable', 'Bit stressed about it', 'Prefer not to say'] },
+  
     { id: 'topConcern', question: "What's your biggest financial concern right now?", type: 'choice',
       options: ['Saving enough', 'Managing expenses', 'Protecting my family', 'Planning for the future', 'Growing my money'] }
   ];
+  
+  const questions = useMemo(
+    () => allQuestions.filter(q => !q.showIf || q.showIf(answers)),
+    [answers]
+  );
 
   const handleAnswer = (questionId, value) => {
     if (questions[currentStep].type === 'multiple') {
@@ -100,18 +136,12 @@ const FinancialQuestionnaire = () => {
   const coverage = useMemo(() => {
     const has = (x) => (answers.insuranceCoverage || []).includes(x);
     const dep = answers.hasKids === 'Yes' || answers.hasKids === 'Planning to have kids';
-
+  
     const mapEF = {
       'Yes, fully funded': 'Covered',
       'Working on it': 'Work in Progress',
       'Not yet': 'Gap',
       'Emergency... what?': 'Gap'
-    };
-    const mapRet = {
-      'Yes, regularly': 'Covered',
-      'Occasionally': 'Work in Progress',
-      'Not yet': 'Gap',
-      "What's a retirement plan? 😅": 'Gap'
     };
     const mapDebt = {
       'Debt-free! 🎉': 'Covered',
@@ -119,20 +149,48 @@ const FinancialQuestionnaire = () => {
       'Bit stressed about it': 'Gap',
       'Prefer not to say': 'Work in Progress'
     };
-
+  
+    // Income protection via vibe check (fallback to old logic if missing)
+    let incomeState;
+    if (answers.protectionConfidence) {
+      incomeState =
+        answers.protectionConfidence === 'Feels solid' ? 'Covered' :
+        answers.protectionConfidence === 'Have some but not sure' ? 'Work in Progress' :
+        // 'None yet'
+        (dep ? 'Gap' : 'Work in Progress');
+    } else {
+      incomeState = has('Life Insurance') ? 'Covered' : (dep ? 'Gap' : 'Work in Progress');
+    }
+  
+    // Retirement via vibe check + plan answer
+    let retirementState;
+    if (answers.retirementPlan === 'Not yet' || answers.retirementPlan === "What's a retirement plan? 😅") {
+      retirementState = 'Gap';
+    } else if (answers.retirementConfidence) {
+      retirementState =
+        answers.retirementConfidence === 'Feels on track'
+          ? (answers.retirementPlan === 'Yes, regularly' ? 'Covered' : 'Work in Progress')
+          : answers.retirementConfidence === 'Making a start'
+            ? 'Work in Progress'
+            : 'Gap';
+    } else {
+      // Fallback if vibe not answered yet
+      retirementState =
+        answers.retirementPlan === 'Yes, regularly' ? 'Covered' :
+        answers.retirementPlan === 'Occasionally' ? 'Work in Progress' : 'Gap';
+    }
+  
     const obj = {
       medical: has('Health/Medical') ? 'Covered' : 'Gap',
-      income: has('Life Insurance') ? 'Covered' : (dep ? 'Gap' : 'Work in Progress'),
+      income: incomeState,
+      retirement: retirementState,
       emergency: mapEF[answers.emergencyFund] || 'Work in Progress',
-      debt: mapDebt[answers.debtSituation] || 'Work in Progress',
-      retirement: mapRet[answers.retirementPlan] || 'Work in Progress'
+      debt: mapDebt[answers.debtSituation] || 'Work in Progress'
     };
-
-    // Only add Education tile if kids now/planned
-    if (answers.hasKids === 'Yes') obj.education = 'Work in Progress';
-    else if (answers.hasKids === 'Planning to have kids') obj.education = 'Work in Progress';
-    // if 'No', omit entirely by not setting education
-
+  
+    if (answers.hasKids === 'Yes' || answers.hasKids === 'Planning to have kids') {
+      obj.education = 'Work in Progress';
+    }
     return obj;
   }, [answers]);
 
