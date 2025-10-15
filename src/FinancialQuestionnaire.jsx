@@ -137,17 +137,33 @@ const FinancialQuestionnaire = () => {
   }, [answers]);
 
   const persona = useMemo(() => {
-    const states = Object.values(coverage);
-    const gaps = states.filter(s => s === 'Gap').length;
-    const covered = states.filter(s => s === 'Covered').length;
+    const vals = Object.values(coverage);
+    const covered = vals.filter(s => s === 'Covered').length;
+    const wip = vals.filter(s => s === 'Work in Progress').length;
+    const gaps = vals.filter(s => s === 'Gap').length;
+  
     const dep = answers.hasKids === 'Yes' || answers.hasKids === 'Planning to have kids';
     const hasLife = (answers.insuranceCoverage || []).includes('Life Insurance');
     const efCovered = coverage.emergency === 'Covered';
     const debtFree = coverage.debt === 'Covered';
     const retCovered = coverage.retirement === 'Covered';
-    const growthIntent = answers.topConcern === 'Growing my money' || answers.topConcern === 'Planning for the future';
-
-    // Persona rules (simple, readable)
+    const growthIntent =
+      answers.topConcern === 'Growing my money' ||
+      answers.topConcern === 'Planning for the future';
+  
+    // 👉 New top rule: truly at square one
+    if (covered === 0 && gaps >= 3) {
+      return {
+        name: 'Getting Started',
+        lines: [
+          "You’re fresh on the journey—perfect time to set the basics right.",
+          "We’ll lock in safety nets first so every next step feels easier."
+        ],
+        gradient: 'from-amber-500 to-rose-500'
+      };
+    }
+  
+    // Growth once defenses are in place
     if (efCovered && retCovered && growthIntent) {
       return {
         name: 'Growth-Oriented Planner',
@@ -158,6 +174,8 @@ const FinancialQuestionnaire = () => {
         gradient: 'from-indigo-500 to-emerald-500'
       };
     }
+  
+    // Family-first with protection in place
     if (dep && hasLife) {
       return {
         name: 'Family Protector',
@@ -168,6 +186,8 @@ const FinancialQuestionnaire = () => {
         gradient: 'from-indigo-500 to-purple-500'
       };
     }
+  
+    // Defensive pro, missing retirement engine
     if (efCovered && debtFree && !retCovered) {
       return {
         name: 'Safety-First Guardian',
@@ -178,6 +198,8 @@ const FinancialQuestionnaire = () => {
         gradient: 'from-teal-500 to-indigo-500'
       };
     }
+  
+    // Early momentum: some coverage, some gaps
     if (gaps >= 2) {
       return {
         name: 'Starting Strong',
@@ -188,6 +210,8 @@ const FinancialQuestionnaire = () => {
         gradient: 'from-rose-500 to-amber-500'
       };
     }
+  
+    // Default
     return {
       name: 'Free-Spirited Builder',
       lines: [
@@ -245,12 +269,10 @@ const FinancialQuestionnaire = () => {
         <div ref={resultRef} className="max-w-2xl w-full bg-white rounded-3xl shadow-xl overflow-hidden">
           {/* Persona header */}
           <div className={`p-8 bg-gradient-to-r ${persona.gradient} text-white`}>
-            <h2 className="text-2xl md:text-3xl font-bold">
-              {persona.name}
-            </h2>
+            <p className="text-white/90 text-sm mb-2">Hi {answers.name || 'there'} 👋</p>
+            <h2 className="text-2xl md:text-3xl font-bold">{persona.name}</h2>
             <p className="mt-3 opacity-95">{persona.lines[0]}</p>
             <p className="opacity-95">{persona.lines[1]}</p>
-            <p className="mt-3 text-white/90 text-sm">Hi {answers.name || 'there'} 👋</p>
           </div>
 
           <div className="p-6 md:p-8 space-y-8">
