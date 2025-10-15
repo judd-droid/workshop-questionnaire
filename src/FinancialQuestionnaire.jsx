@@ -122,13 +122,13 @@ const FinancialQuestionnaire = () => {
       question: 'How does college funding feel?',
       subtitle: 'Go with your gut',
       type: 'choice',
-      options: ['Feels covered', 'Saving but not there yet', 'Not yet', 'Too early / not needed'],
+      options: ['Feels covered', 'Saving but not there yet', 'Not yet'],
       showIf: (a) => a.hasKids === 'Yes'
     },
   
     { id: 'insuranceCoverage', question: "What insurance do you currently have?",
       subtitle: "Select all that apply", type: 'multiple',
-      options: ['Life Insurance', 'Health/Medical', 'None yet', 'Not sure'] },
+      options: ['Life Insurance', 'Health/Medical', 'None yet / not sure'] },
   
     // NEW — only if Life Insurance chosen OR has/plan dependents
     { id: 'protectionConfidence',
@@ -149,7 +149,7 @@ const FinancialQuestionnaire = () => {
       question: "How does your retirement saving feel?",
       subtitle: "Go with your gut",
       type: 'choice',
-      options: ['Feels on track', 'Making a start', 'Not yet'],
+      options: ['Feels on track', 'Making a start', "Haven't started"],
       showIf: (a) => a.retirementPlan !== ''
     },
   
@@ -172,11 +172,20 @@ const FinancialQuestionnaire = () => {
   const handleAnswer = (questionId, value) => {
     if (questions[currentStep].type === 'multiple') {
       const current = answers[questionId] || [];
-      const newValue = current.includes(value) ? current.filter(v => v !== value) : [...current, value];
-      setAnswers({ ...answers, [questionId]: newValue });
-    } else {
-      setAnswers({ ...answers, [questionId]: value });
+      const exclusive = 'None yet / not sure';
+  
+      let next;
+      if (current.includes(value)) {
+        next = current.filter(v => v !== value);
+      } else {
+        next = value === exclusive
+          ? [exclusive]                                  // pick only the exclusive
+          : [...current.filter(v => v !== exclusive), value]; // remove exclusive if present
+      }
+      setAnswers({ ...answers, [questionId]: next });
+      return;
     }
+    setAnswers({ ...answers, [questionId]: value });
   };
 
   const canProceed = () => {
@@ -228,7 +237,6 @@ const FinancialQuestionnaire = () => {
         case 'Feels covered':               education = 'Covered'; break;
         case 'Saving but not there yet':    education = 'Work in Progress'; break;
         case 'Not yet':                     education = 'Gap'; break;
-        case 'Too early / not needed':      education = undefined; break; // hide
         default:                            education = undefined; // unanswered → hide
       }
     }
@@ -247,20 +255,22 @@ const FinancialQuestionnaire = () => {
   
     // Retirement via vibe check + plan answer
     let retirementState;
-    if (answers.retirementPlan === 'Not yet' || answers.retirementPlan === "What's a retirement plan? 😅") {
+    const plan = answers.retirementPlan;
+    const rc = answers.retirementConfidence;
+    
+    if (plan === 'Not yet' || plan === "What's a retirement plan? 😅") {
       retirementState = 'Gap';
-    } else if (answers.retirementConfidence) {
+    } else if (rc) {
       retirementState =
-        answers.retirementConfidence === 'Feels on track'
-          ? (answers.retirementPlan === 'Yes, regularly' ? 'Covered' : 'Work in Progress')
-          : answers.retirementConfidence === 'Making a start'
+        rc === 'Feels on track'
+          ? (plan === 'Yes, regularly' ? 'Covered' : 'Work in Progress')
+          : rc === 'Making a start'
             ? 'Work in Progress'
-            : 'Gap';
+            : 'Gap'; // "Haven't started"
     } else {
-      // Fallback if vibe not answered yet
       retirementState =
-        answers.retirementPlan === 'Yes, regularly' ? 'Covered' :
-        answers.retirementPlan === 'Occasionally' ? 'Work in Progress' : 'Gap';
+        plan === 'Yes, regularly' ? 'Covered' :
+        plan === 'Occasionally' ? 'Work in Progress' : 'Gap';
     }
   
     const obj = {
@@ -539,6 +549,13 @@ const FinancialQuestionnaire = () => {
             <h2 className="text-2xl md:text-3xl font-bold">{persona.name}</h2>
             <p className="mt-3 opacity-95">{persona.lines[0]}</p>
             <p className="opacity-95">{persona.lines[1]}</p>
+
+            {/* NEW: top concern pill */}
+            {answers.topConcern && (
+              <span className="inline-block mt-4 text-sm font-medium bg-white/15 backdrop-blur px-3 py-1 rounded-full">
+                We’ll prioritize: {answers.topConcern}
+              </span>
+            )}
           </div>
 
           <div className="p-6 md:p-8 space-y-8">
