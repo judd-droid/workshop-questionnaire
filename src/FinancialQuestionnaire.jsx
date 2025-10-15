@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { ChevronRight, ChevronLeft, CheckCircle2, TrendingUp, Camera } from 'lucide-react';
+import { Calendar, CalendarDays, Zap, Phone, ShieldCheck, Facebook } from 'lucide-react';
 
 const FinancialQuestionnaire = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -433,19 +434,16 @@ const FinancialQuestionnaire = () => {
   // --------------------------
   if (showBooking) {
     const options = [
-      { id: 'today', label: 'Today' },
-      { id: 'next_week', label: "Next week — let's find a common time" },
-      { id: 'after_next_week', label: "After next week — let's discuss" }
+      { id: 'today', label: 'Today', sub: 'I’m free today — text me slots', icon: <Zap className="w-5 h-5" /> },
+      { id: 'next_week', label: "Next week — let's find a common time", sub: 'We’ll pick a time that fits us both', icon: <CalendarDays className="w-5 h-5" /> },
+      { id: 'after_next_week', label: "After next week — let's discuss", sub: 'Plan ahead, no rush', icon: <Calendar className="w-5 h-5" /> }
     ];
   
     const openFacebook = () => {
-      // best effort: try to open FB app, otherwise open in browser
       const webUrl = 'https://www.facebook.com/juddstamaria';
       const appUrl = `fb://facewebmodal/f?href=${encodeURIComponent(webUrl)}`;
-      // try app
       const start = Date.now();
       window.location.href = appUrl;
-      // fallback to web after a short delay
       setTimeout(() => {
         if (Date.now() - start < 1500) window.open(webUrl, '_blank');
       }, 800);
@@ -453,61 +451,89 @@ const FinancialQuestionnaire = () => {
   
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-4 flex items-center justify-center">
-        <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-8 md:p-10">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            Pick a time that works for you.
-          </h2>
-          <p className="text-gray-600 mb-6">I’ll reach out with easy options.</p>
+        <div className="max-w-2xl w-full bg-white rounded-3xl shadow-xl p-0 overflow-hidden">
   
-          {/* choices */}
-          <div className="grid grid-cols-1 gap-3 mb-6">
-            {options.map(opt => (
-              <button
-                key={opt.id}
-                onClick={() => setBookingOption(opt.label)}
-                className={`w-full px-6 py-4 text-left rounded-2xl border-2 transition-all text-lg font-medium
-                  ${bookingOption === opt.label
-                    ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-indigo-300 hover:bg-indigo-50/50'
-                  }`}
-              >
-                {opt.label}
-              </button>
-            ))}
+          {/* Gradient header */}
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-8">
+            <h2 className="text-2xl md:text-3xl font-bold">Pick a time that works for you.</h2>
+            <p className="mt-1 text-white/90">Free 15-min chat. No hard sell.</p>
           </div>
   
-          {/* mobile input */}
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            How do I contact you?
-          </label>
-          <input
-            type="tel"
-            inputMode="tel"
-            placeholder="e.g., 0917 123 4567"
-            value={mobile}
-            onChange={(e) => setMobile(e.target.value)}
-            className="w-full px-5 py-4 rounded-2xl border-2 border-gray-200 focus:border-indigo-500 focus:outline-none transition-colors mb-6"
-          />
+          <div className="p-6 md:p-8">
+            {/* Choices */}
+            <div className="grid grid-cols-1 gap-3 mb-6">
+              {options.map(opt => {
+                const selected = bookingOption === opt.label;
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => setBookingOption(opt.label)}
+                    className={`w-full text-left rounded-2xl border-2 transition-all p-4
+                      ${selected
+                        ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200'
+                        : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50'
+                      }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className={`shrink-0 p-2 rounded-xl ${selected ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                        {opt.icon}
+                      </span>
+                      <div>
+                        <div className="font-semibold text-gray-900">{opt.label}</div>
+                        <div className="text-sm text-gray-600">{opt.sub}</div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
   
-          {/* actions */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={submitBooking}
-              disabled={!canSubmitBooking || bookingStatus !== 'idle'}
-              aria-busy={bookingStatus === 'sending'}
-              className={`flex-1 px-5 py-3 rounded-xl font-semibold transition
-                ${bookingStatus === 'sent' ? 'bg-emerald-600 text-white'
-                  : bookingStatus === 'sending' ? 'bg-indigo-300 text-white cursor-wait'
-                  : canSubmitBooking ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:scale-[1.01]'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
-            >
-              {bookingStatus === 'sending' && <Spinner />}
-              {bookingStatus === 'sent' ? 'Sent! I’ll text you shortly' :
-               bookingStatus === 'sending' ? 'Sending…' :
-               'Send My Preference'}
-            </button>
-            
-            {/* inline status note */}
+            {/* Mobile input */}
+            <label className="block text-sm font-medium text-gray-700 mb-2">How do I contact you?</label>
+            <div className="relative mb-2">
+              <Phone className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
+              <input
+                type="tel"
+                inputMode="tel"
+                placeholder="e.g., 0917 123 4567"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 focus:border-indigo-500 focus:outline-none transition-colors"
+              />
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Your number stays private—used only to confirm a time.</span>
+            </div>
+  
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={submitBooking}
+                disabled={!canSubmitBooking || bookingStatus !== 'idle'}
+                aria-busy={bookingStatus === 'sending'}
+                className={`flex-1 px-5 py-3 rounded-xl font-semibold transition
+                  ${bookingStatus === 'sending' ? 'bg-indigo-300 text-white cursor-wait'
+                    : bookingStatus === 'sent' ? 'bg-emerald-600 text-white'
+                    : canSubmitBooking ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:scale-[1.01]'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+              >
+                {bookingStatus === 'sending' ? 'Sending…'
+                  : bookingStatus === 'sent' ? "Sent! I’ll text you shortly"
+                  : 'Text me the plan'}
+              </button>
+  
+              <button
+                onClick={openFacebook}
+                className="flex-1 px-5 py-3 rounded-xl border-2 text-[#1877F2] border-[#1877F2] bg-[#1877F2]/10 hover:bg-[#1877F2]/20 transition font-semibold flex items-center justify-center gap-2"
+                title="Open my Facebook profile"
+              >
+                <Facebook className="w-5 h-5" />
+                Add me on Facebook!
+              </button>
+            </div>
+  
+            {/* Error note only */}
             <div className="mt-2 text-center" aria-live="polite">
               {bookingStatus === 'error' && (
                 <span className="text-rose-700">Hmm, that didn’t go through. Try again?</span>
@@ -515,20 +541,12 @@ const FinancialQuestionnaire = () => {
             </div>
   
             <button
-              onClick={openFacebook}
-              className="flex-1 px-5 py-3 rounded-xl border-2 border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition"
-              title="Open my Facebook profile"
+              onClick={() => setShowBooking(false)}
+              className="mt-6 w-full py-3 px-6 bg-gray-100 text-gray-700 rounded-full font-medium hover:bg-gray-200 transition-colors"
             >
-              Add me on Facebook!
+              Back to Results
             </button>
           </div>
-  
-          <button
-            onClick={() => setShowBooking(false)}
-            className="mt-6 w-full py-3 px-6 bg-gray-100 text-gray-700 rounded-full font-medium hover:bg-gray-200 transition-colors"
-          >
-            Back to Results
-          </button>
         </div>
       </div>
     );
