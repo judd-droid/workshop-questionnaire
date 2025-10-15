@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ChevronRight, ChevronLeft, CheckCircle2, TrendingUp } from 'lucide-react';
 
 const FinancialQuestionnaire = () => {
@@ -15,6 +15,31 @@ const FinancialQuestionnaire = () => {
     topConcern: ''
   });
   const [showSummary, setShowSummary] = useState(false);
+
+  const SCRIPT_URL = import.meta.env.VITE_SHEETS_WEBAPP_URL;
+
+  const submitResponses = useCallback(async () => {
+    if (!SCRIPT_URL) {
+      console.error('Missing VITE_SHEETS_WEBAPP_URL');
+      return;
+    }
+    const payload = {
+      ...answers,
+      responseId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      ua: navigator.userAgent,
+      ref: document.referrer
+    };
+    try {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+        mode: 'no-cors' // fire-and-forget; Apps Script doesn't send CORS headers
+      });
+    } catch (e) {
+      console.error('Sheets submit failed', e);
+    }
+  }, [answers, SCRIPT_URL]);
 
   const questions = [
     {
@@ -94,6 +119,7 @@ const FinancialQuestionnaire = () => {
     if (currentStep < questions.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
+      submitResponses();         // <-- call it here
       setShowSummary(true);
     }
   };
