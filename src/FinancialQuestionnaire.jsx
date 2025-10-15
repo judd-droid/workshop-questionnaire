@@ -20,6 +20,15 @@ const FinancialQuestionnaire = () => {
   const [showBooking, setShowBooking] = useState(false);
   const [bookingOption, setBookingOption] = useState('');
   const [mobile, setMobile] = useState('');
+  const [bookingStatus, setBookingStatus] = useState('idle'); // 'idle' | 'sending' | 'sent' | 'error'
+  const inFlightRef = useRef(false);
+
+  const Spinner = () => (
+    <svg className="animate-spin -ml-1 mr-2 h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+    </svg>
+  );
 
   // near your other useState calls
   const [responseId] = useState(() =>
@@ -34,25 +43,40 @@ const FinancialQuestionnaire = () => {
   
   // optional: you can POST these to Sheets later if you want
   const submitBooking = async () => {
-    if (!SCRIPT_URL || !canSubmitBooking) return;
+    if (!SCRIPT_URL || !canSubmitBooking || inFlightRef.current || bookingStatus === 'sent') return;
+  
+    inFlightRef.current = true;
+    setBookingStatus('sending');
+    window.navigator.vibrate?.(10); // tiny haptic on mobile
+  
     const payload = {
-      responseId,                      // <-- same ID ties this to their row
+      responseId,               // same ID as the initial submit
       bookingOption,
       mobile,
       ua: navigator.userAgent,
       ref: document.referrer
     };
+  
+    // Optimistic UX: show "Sent!" quickly even if network takes a sec
+    const minDelay = new Promise((r) => setTimeout(r, 600));
+  
     try {
-      await fetch(SCRIPT_URL, {
+      // Fire-and-forget write; we don't need to await for UX, but we still do with a minimum delay
+      const network = fetch(SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload),
         mode: 'no-cors'
       });
-      // Optional: small UX signal
-      alert('Got it! I’ll text you shortly.');
+  
+      await Promise.race([Promise.all([network, minDelay]), minDelay]);
+      setBookingStatus('sent');
     } catch (e) {
       console.error('Booking submit failed', e);
+      setBookingStatus('error');
+    } finally {
+      // Keep the dedupe guard on briefly; prevent rapid re-taps
+      setTimeout(() => { inFlightRef.current = false; }, 1200);
     }
   };
     
@@ -441,15 +465,29 @@ const FinancialQuestionnaire = () => {
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={submitBooking}
-              disabled={!canSubmitBooking}
+              disabled={!canSubmitBooking || bookingStatus !== 'idle'}
+              aria-busy={bookingStatus === 'sending'}
               className={`flex-1 px-5 py-3 rounded-xl font-semibold transition
-                ${canSubmitBooking
-                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:scale-[1.01]'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                }`}
+                ${bookingStatus === 'sent' ? 'bg-emerald-600 text-white'
+                  : bookingStatus === 'sending' ? 'bg-indigo-300 text-white cursor-wait'
+                  : canSubmitBooking ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:scale-[1.01]'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
             >
-              Send My Preference
+              {bookingStatus === 'sending' && <Spinner />}
+              {bookingStatus === 'sent' ? 'Sent! I’ll text you shortly' :
+               bookingStatus === 'sending' ? 'Sending…' :
+               'Send My Preference'}
             </button>
+            
+            {/* inline status note */}
+            <div className="mt-2 text-center" aria-live="polite">
+              {bookingStatus === 'sent' && (
+                <span className="text-emerald-700">Got it! I’ll reach out with times.</span>
+              )}
+              {bookingStatus === 'error' && (
+                <span className="text-rose-700">Hmm, that didn’t go through. Try again?</span>
+              )}
+            </div>
   
             <button
               onClick={openFacebook}
