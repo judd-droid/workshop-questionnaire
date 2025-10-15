@@ -8,6 +8,7 @@ const FinancialQuestionnaire = () => {
     ageRange: '',
     hasKids: '',
     kidsCount: '',
+    educationConfidence: '',
     insuranceCoverage: [],
     protectionConfidence: '',     // NEW
     retirementPlan: '',
@@ -116,6 +117,14 @@ const FinancialQuestionnaire = () => {
   
     { id: 'hasKids', question: "Do you have kids or dependents?", type: 'choice',
       options: ['Yes', 'No', 'Planning to have kids'] },
+
+    { id: 'educationConfidence',
+      question: 'How does college funding feel?',
+      subtitle: 'Go with your gut',
+      type: 'choice',
+      options: ['Feels covered', 'Saving but not there yet', 'Not yet', 'Too early / not needed'],
+      showIf: (a) => a.hasKids === 'Yes'
+    },
   
     { id: 'insuranceCoverage', question: "What insurance do you currently have?",
       subtitle: "Select all that apply", type: 'multiple',
@@ -211,6 +220,18 @@ const FinancialQuestionnaire = () => {
       'Bit stressed about it': 'Gap',
       'Prefer not to say': 'Work in Progress'
     };
+
+    // Education
+    let education; // undefined means "don’t show tile"
+    if (answers.hasKids === 'Yes') {
+      switch (answers.educationConfidence) {
+        case 'Feels covered':               education = 'Covered'; break;
+        case 'Saving but not there yet':    education = 'Work in Progress'; break;
+        case 'Not yet':                     education = 'Gap'; break;
+        case 'Too early / not needed':      education = undefined; break; // hide
+        default:                            education = undefined; // unanswered → hide
+      }
+    }
   
     // Income protection via vibe check (fallback to old logic if missing)
     let incomeState;
@@ -249,10 +270,7 @@ const FinancialQuestionnaire = () => {
       emergency: mapEF[answers.emergencyFund] || 'Work in Progress',
       debt: mapDebt[answers.debtSituation] || 'Work in Progress'
     };
-  
-    if (answers.hasKids === 'Yes' || answers.hasKids === 'Planning to have kids') {
-      obj.education = 'Work in Progress';
-    }
+    if (education) obj.education = education;   // only include when defined
     return obj;
   }, [answers]);
 
