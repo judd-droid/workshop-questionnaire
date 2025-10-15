@@ -643,7 +643,7 @@ const FinancialQuestionnaire = () => {
 
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 w-full py-3 px-6 bg-gray-100 text-gray-700 rounded-full font-medium hover:bg-gray-200 transition-colors"
+              className="border border-indigo-100 bg-indigo-50 text-indigo-600 py-3 rounded-xl text-sm hover:bg-indigo-100 transition-all duration-150"
             >
               Start Over
             </button>
