@@ -88,8 +88,8 @@
  *******************/
 const WEBHOOK_URL = ""; // optional: paste a webhook (Google Apps Script / Make / Zapier) to receive POST JSON
 const WORKSHOP = "VML Financial Wellness"; // used in CSV/email subject
-// avoid regex \b literal in source to prevent encoding issues in some injectors
-const TEST_MODE = (location.hash.includes('test') || new RegExp('[?&]test=1\\b').test(location.search));
+// avoid regex  literal in source to prevent encoding issues in some injectors
+const TEST_MODE = (location.hash.includes('test') || new RegExp('[?&]test=1\b').test(location.search));
 
 /*******************
  * UTILITIES
@@ -133,8 +133,10 @@ const toast = (msg)=>{
 }
 const toCSV = (obj)=>{
   const headers = Object.keys(obj);
-  const values = headers.map(k => JSON.stringify(nv(obj[k])).replace(/\n/g,' '));
-  return headers.join(',') + "\n" + values.join(',');
+  const values = headers.map(k => JSON.stringify(nv(obj[k])).replace(/
+/g,' '));
+  return headers.join(',') + "
+" + values.join(',');
 }
 const download = (name, text)=>{
   const blob = new Blob([text], {type:'text/plain'});
@@ -373,7 +375,7 @@ steps.push(function Step6(){
   ]);
 });
 
-// Step 7: Consult preference (to populate consult/channel/contact/best_time)
+// Step 7: Consult preference (optional details)
 steps.push(function Step7(){
   return el('div', {class:'q'}, [
     el('h2', {html:'Would you like a quick consult?'}),
@@ -444,7 +446,9 @@ steps.push(function Done(){
 
   if(Array.isArray(data.goals) && data.goals.length>3) data.goals = data.goals.slice(0,3);
 
-  const pre = el('pre', {html: Object.entries(summary).map(([k,v])=>`${k}: ${v||''}`).join('\n') });
+  const preText = Object.entries(summary).map(([k,v])=>`${k}: ${v||''}`).join('
+');
+  const pre = el('pre', {html: sanitizeText(preText)});
 
   const onCopy = async()=>{
     try{ await navigator.clipboard.writeText(pre.textContent); toast('Summary copied'); }
@@ -454,7 +458,9 @@ steps.push(function Done(){
   const onEmail = ()=>{
     const to = data.email || '';
     const subject = encodeURIComponent(`[${WORKSHOP}] Your questionnaire summary`);
-    const body = encodeURIComponent(pre.textContent + "\n\n— Sent from the VML workshop questionnaire");
+    const body = encodeURIComponent(pre.textContent + "
+
+— Sent from the VML workshop questionnaire");
     window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
   }
 
@@ -540,13 +546,15 @@ function runTests(){
   let pass=0, fail=0;
   const assert=(cond,msg)=>{ if(cond){ pass++; } else { fail++; console.error('TEST FAIL:', msg); }}
 
-  // sanitizeText
-  const s = sanitizeText('<script>x</script>✅\u0007');
-  assert(!/[<>]/.test(s) && s.indexOf('script')>=0, 'sanitizeText should escape angle brackets');
+  // sanitizeText — IMPORTANT: avoid literal </script> in a <script> tag
+  const s = sanitizeText('<scr' + 'ipt>x</scr' + 'ipt>' + '✅');
+  assert(!/[<>]/.test(s) && s.includes('script'), 'sanitizeText should escape angle brackets');
 
   // toCSV
-  const csv = toCSV({a:null,b:'X\nY',c:'<tag>'});
-  assert(csv.split('\n').length===2, 'toCSV should produce header + one row');
+  const csv = toCSV({a:null,b:'X
+Y',c:'<tag>'});
+  assert(csv.split('
+').length===2, 'toCSV should produce header + one row');
 
   // enforceGoalLimit
   data.goals = ['A','B','C','D']; enforceGoalLimit();
