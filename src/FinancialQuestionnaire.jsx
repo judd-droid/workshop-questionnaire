@@ -628,20 +628,16 @@ const FinancialQuestionnaire = () => {
             )}
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <button
-                onClick={saveImage}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition"
-                title="Save a picture of these results"
-              >
-                <Camera className="w-5 h-5" />
-                Save Photo of Result
-              </button>
-              <button
-                onClick={onBook}
-                className="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:shadow-lg hover:scale-[1.01] transition"
+            <div className="flex flex-col gap-3 mt-6">
+              <button onClick={onBook}
+                className="bg-gradient-to-r from-purple-600 to-blue-500 text-white font-semibold py-4 rounded-xl text-lg shadow-lg hover:scale-[1.02] transition-all duration-150"
               >
                 Show Me My Next Steps
+              </button>
+              <button onClick={saveImage}
+                className="border border-indigo-100 bg-indigo-50 text-indigo-600 py-3 rounded-xl text-sm hover:bg-indigo-100 transition-all duration-150"
+              >
+                Save Snapshot
               </button>
             </div>
 
