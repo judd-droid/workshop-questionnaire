@@ -395,7 +395,7 @@ const FinancialQuestionnaire = () => {
                 onClick={onBook}
                 className="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold hover:shadow-lg hover:scale-[1.01] transition"
               >
-                Book a Personalized Consultation
+                Show Me My Next Steps
               </button>
             </div>
 
