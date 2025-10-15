@@ -354,11 +354,6 @@ const FinancialQuestionnaire = () => {
     }
   };
 
-  const onBook = () => {
-    // TODO: wire up Calendly/WhatsApp/your booking flow here
-    console.log('Book Personalized Consultation clicked');
-  };
-
   // --------------------------
   // Show Booking
   // --------------------------
