@@ -298,7 +298,7 @@ const FinancialQuestionnaire = () => {
     // Early momentum: some coverage, some gaps
     if (gaps >= 2) {
       return {
-        name: 'Starting Strong',
+        name: 'Strong Starter',
         lines: [
           "You’re getting the essentials on your radar—good start.",
           "We’ll tackle the big wins first so momentum comes fast."
