@@ -299,6 +299,18 @@ const FinancialQuestionnaire = () => {
     const growthIntent =
       answers.topConcern === 'Growing my money' ||
       answers.topConcern === 'Planning for the future';
+
+    // Nearly complete — one gap left
+    if (covered >= 4 && gaps === 1) {
+      return {
+        name: 'Balanced Strategist',
+        lines: [
+          "You’ve built a strong foundation — just one more step to complete your plan.",
+          "Let’s lock in that last piece so your finances feel truly future-proof."
+        ],
+        gradient: 'from-emerald-500 to-indigo-500'
+      };
+    }
   
     // 0) Acute protection risk gets top priority
     if (medical === 'Gap' || (dep && income === 'Gap')) {
