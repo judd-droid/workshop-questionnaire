@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VML Financial Wellness — Quick Questionnaire</title>
+  <meta name="description" content="Ultra-simple, mobile-first workshop questionnaire. Short, clear, skippable." />
+  <style>
+    :root{
+      --bg:#0b1020;
+      --card:#11162a;
+      --ink:#eef2ff;
+      --muted:#a3b0d1;
+      --accent:#7c3aed;
+      --accent-2:#22d3ee;
+      --line:#27314f;
+      --ok:#10b981;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --radius:16px;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#0a0f20, #0d1530 35%, #0b1020);color:var(--ink);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+    .wrap{max-width:820px;margin:0 auto;padding:20px}
+    header{display:flex;gap:14px;align-items:center;margin:8px 0 14px}
+    .logo{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:grid;place-items:center;box-shadow:var(--shadow)}
+    h1{font-size:20px;margin:0}
+    .sub{color:var(--muted);font-size:13px}
+
+    .card{background:radial-gradient(1200px 600px at 0% -10%, rgba(124,58,237,.08), transparent 35%), #0f1530; border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+    .progress{height:10px;background:#0a0f20;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+    .bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0%}
+
+    .q h2{font-size:18px;margin:0 0 8px}
+    .q p{margin:0 0 16px;color:var(--muted)}
+
+    .row{display:flex;flex-wrap:wrap;gap:10px}
+    .chip{appearance:none;display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:#0c1230;color:var(--ink);cursor:pointer;transition:.2s;user-select:none}
+    .chip:hover{border-color:#41507a}
+    .chip[data-checked="true"]{background:linear-gradient(135deg,rgba(124,58,237,.25),rgba(34,211,238,.2));border-color:transparent}
+
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:720px){.grid{grid-template-columns:1fr 1fr}}
+
+    .input, select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#0c1230;color:var(--ink)}
+    .small{font-size:12px;color:var(--muted)}
+
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .btn{appearance:none;border:1px solid var(--line);background:#0e1533;color:var(--ink);padding:12px 16px;border-radius:12px;cursor:pointer}
+    .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none;color:white;font-weight:700}
+    .btn.ghost{background:transparent}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+
+    .footnote{margin-top:8px;color:var(--muted);font-size:12px}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);font-size:12px}
+    .hr{height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);margin:12px 0}
+
+    .summary pre{white-space:pre-wrap;background:#0c1230;padding:12px;border-radius:12px;border:1px solid var(--line)}
+
+    .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#0c1230;border:1px solid var(--line);padding:10px 14px;border-radius:10px;display:none}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo" aria-hidden="true">💬</div>
+      <div>
+        <h1>VML Financial Wellness — Quick Questionnaire</h1>
+        <div class="sub">Made for busy creatives. ~2 minutes. No math. Skip anything you don't want to answer.</div>
+      </div>
+    </header>
+
+    <div class="card" role="region" aria-label="Questionnaire">
+      <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+      <div id="stage" style="margin-top:12px"></div>
+    </div>
+
+    <div class="footnote">💡 <span class="pill">Private by default</span> Data stays on this device unless you choose to send it. You'll get a summary you can email to yourself or the speaker for a consult.</div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/*******************
+ * CONFIG
+ *******************/
+const WEBHOOK_URL = ""; // optional: paste a webhook (Google Apps Script / Make / Zapier) to receive POST JSON
+const WORKSHOP = "VML Financial Wellness"; // used in CSV/email subject
+// avoid regex \b literal in source to prevent encoding issues in some injectors
+const TEST_MODE = (location.hash.includes('test') || new RegExp('[?&]test=1\\b').test(location.search));
+
+/*******************
+ * UTILITIES
+ *******************/
+const $ = sel => document.querySelector(sel);
+const el = (tag, attrs={}, children=[])=>{
+  const n = document.createElement(tag);
+  for(const k in attrs){
+    if(k.startsWith('on') && typeof attrs[k]==='function'){
+      n.addEventListener(k.substring(2), attrs[k]);
+    } else if(k==='html') {
+      n.innerHTML = attrs[k];
+    } else {
+      n.setAttribute(k, attrs[k]);
+    }
+  }
+  for(const c of [].concat(children)) if(c!==undefined && c!==null) n.append(c.nodeType?c:document.createTextNode(c));
+  return n;
+}
+const nv = v => (v===null || v===undefined) ? '' : v; // null/undefined -> ''
+// strip ASCII control chars without regex ranges to avoid encoding issues
+function stripCtrl(s){
+  let out='';
+  for(let i=0;i<s.length;i++){
+    const code = s.charCodeAt(i);
+    if(code>=32 && code!==127){ out += s[i]; }
+  }
+  return out;
+}
+const sanitizeText = (s)=>{
+  try {
+    const escaped = String(s).replace(/[<>&]/g, ch => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[ch]));
+    return stripCtrl(escaped);
+  } catch(e){ return ''; }
+}
+const toast = (msg)=>{
+  const t=$('#toast');
+  t.innerHTML = sanitizeText(msg);
+  t.style.display='block';
+  setTimeout(()=>{ t.style.display='none'; },1700);
+}
+const toCSV = (obj)=>{
+  const headers = Object.keys(obj);
+  const values = headers.map(k => JSON.stringify(nv(obj[k])).replace(/\n/g,' '));
+  return headers.join(',') + "\n" + values.join(',');
+}
+const download = (name, text)=>{
+  const blob = new Blob([text], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = el('a', {href:url, download:name});
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+const saveLocal = (data)=>{ try{ localStorage.setItem('vml-q', JSON.stringify(data)); }catch(e){} }
+const loadLocal = ()=>{ try{ return JSON.parse(localStorage.getItem('vml-q')||'{}'); }catch(e){ return {} } }
+
+/*******************
+ * STATE
+ *******************/
+let step = 0;
+const steps = [];
+let data = Object.assign({
+  consent:false,
+  timestamp: new Date().toISOString(),
+  context: WORKSHOP
+}, loadLocal());
+
+/*******************
+ * CHIPS (toggle pills)
+ *******************/
+function Chip(id, label, {multi=true, group, value}={}){
+  const key = group || id;
+  if(multi){ data[key] = Array.isArray(data[key]) ? data[key] : []; }
+  const checked = multi ? (data[key]||[]).includes(value||label) : data[key]===(value||label);
+  const btn = el('button', {class:'chip', type:'button'});
+  btn.dataset.checked = checked ? 'true' : 'false';
+  btn.setAttribute('aria-pressed', checked ? 'true' : 'false');
+  btn.append(label);
+  btn.addEventListener('click', ()=>{
+    if(multi){
+      const arr = new Set(data[key]||[]);
+      if(arr.has(value||label)) arr.delete(value||label); else arr.add(value||label);
+      data[key] = Array.from(arr);
+    }else{
+      data[key] = data[key]===(value||label) ? '' : (value||label);
+      btn.parentElement.querySelectorAll('.chip').forEach(c=>{ if(c!==btn){ c.dataset.checked='false'; c.setAttribute('aria-pressed','false'); } });
+    }
+    const nowChecked = btn.dataset.checked==='true';
+    btn.dataset.checked = nowChecked ? 'false':'true';
+    btn.setAttribute('aria-pressed', nowChecked ? 'false':'true');
+    saveLocal(data);
+  });
+  return btn;
+}
+
+/*******************
+ * STEPS
+ *******************/
+steps.push(function Step0(){
+  return el('div', {class:'q'}, [
+    el('h2', {html:'Welcome! Can we keep this quick & painless?'}),
+    el('p', {html:'Answer a few tap-friendly questions. You can skip anything.'}),
+    el('div', {class:'grid'}, [
+      el('div', {}, [
+        el('label', {class:'small', html:'First name (optional)'}),
+        el('input', {class:'input', placeholder:'e.g., Alex', value:nv(data.first_name), oninput:e=>{data.first_name=e.target.value; saveLocal(data);}})
+      ]),
+      el('div', {}, [
+        el('label', {class:'small', html:'Email (to receive your summary) — optional'}),
+        el('input', {class:'input', placeholder:'name@company.com', type:'email', value:nv(data.email), oninput:e=>{data.email=e.target.value; saveLocal(data);}})
+      ]),
+    ]),
+    el('div', {class:'hr'}),
+    el('div', {class:'row'}, [
+      Chip('consent', 'I consent to share my answers with the speaker', {multi:false, value:true, group:'consent'}),
+      Chip('anonymous', 'Answer anonymously', {multi:false, value:true, group:'anonymous'}),
+    ]),
+  ]);
+});
+
+steps.push(function Step1(){
+  return el('div', {class:'q'}, [
+    el('h2', {html:'About your household & work'}),
+    el('p', {html:'Choose what fits best.'}),
+    el('label', {class:'small', html:'Relationship status'}),
+    el('div', {class:'row'}, [
+      Chip('status', 'Single', {multi:false, group:'status'}),
+      Chip('status', 'Married', {multi:false, group:'status'}),
+      Chip('status', 'Partnered', {multi:false, group:'status'}),
+      Chip('status', 'Prefer not to say', {multi:false, group:'status'}),
+    ]),
+    el('div', {class:'hr'}),
+    el('label', {class:'small', html:'Dependents'}),
+    el('div', {class:'row'}, [
+      Chip('dependents', 'No kids', {multi:false, group:'dependents'}),
+      Chip('dependents', '1 kid', {multi:false, group:'dependents'}),
+      Chip('dependents', '2 kids', {multi:false, group:'dependents'}),
+      Chip('dependents', '3+ kids', {multi:false, group:'dependents'}),
+    ]),
+    el('div', {class:'hr'}),
+    el('label', {class:'small', html:'Work type'}),
+    el('div', {class:'row'}, [
+      Chip('work', 'Employee', {multi:false, group:'work'}),
+      Chip('work', 'Freelancer', {multi:false, group:'work'}),
+      Chip('work', 'Business owner', {multi:false, group:'work'}),
+    ]),
+    el('div', {class:'hr'}),
+    el('label', {class:'small', html:'If I couldn\'t work for 6 months…'}),
+    el('div', {class:'row'}, [
+      Chip('buffer', 'We\'d be okay', {multi:false, group:'buffer'}),
+      Chip('buffer', 'We\'d be stretched', {multi:false, group:'buffer'}),
+      Chip('buffer', 'We\'d be in trouble', {multi:false, group:'buffer'}),
+    ]),
+  ]);
+});
+
+steps.push(function Step2(){
+  return el('div', {class:'q'}, [
+    el('h2', {html:'Safety net & benefits'}),
+    el('p', {html:'Tap what applies.'}),
+    el('label', {class:'small', html:'Emergency fund (months of expenses)'}),
+    el('div', {class:'row'}, [
+      Chip('efund', '0'), Chip('efund', '1'), Chip('efund', '2-3'), Chip('efund', '4-6'), Chip('efund', '6+'),
+    ]),
+    el('div', {class:'hr'}),
+    el('label', {class:'small', html:'Health & social benefits (you)'}),
+    el('div', {class:'row'}, [
+      Chip('benefits', 'PhilHealth', {group:'benefits'}),
+      Chip('benefits', 'HMO (company)'),
+      Chip('benefits', 'HMO (self)'),
+      Chip('benefits', 'SSS/GSIS'),
+      Chip('benefits', 'None / Unsure'),
+    ]),
+  ]);
+});
+
+steps.push(function Step3(){
+  return el('div', {class:'q'}, [
+    el('h2', {html:'Current coverages'}),
+    el('p', {html:'What do you currently have?'}),
+    el('label', {class:'small', html:'Life insurance'}),
+    el('div', {class:'row'}, [
+      Chip('life', 'Term', {group:'life'}),
+      Chip('life', 'VUL', {group:'life'}),
+      Chip('life', 'Whole', {group:'life'}),
+      Chip('life', 'Group/Company', {group:'life'}),
+      Chip('life', 'None/Unsure', {group:'life'}),
+    ]),
+    el('div', {class:'hr'}),
+    el('label', {class:'small', html:'Health & protection'}),
+    el('div', {class:'row'}, [
+      Chip('covers', 'HMO', {group:'covers'}),
+      Chip('covers', 'Critical illness', {group:'covers'}),
+      Chip('covers', 'Accident/AD&D', {group:'covers'}),
+      Chip('covers', 'Disability', {group:'covers'}),
+      Chip('covers', 'Hospital income', {group:'covers'}),
+    ]),
+    el('div', {class:'hr'}),
+    el('label', {class:'small', html:'Family coverage (others besides you)'}),
+    el('div', {class:'row'}, [
+      Chip('famcov', 'Spouse/Partner', {group:'famcov'}),
+      Chip('famcov', 'Kids', {group:'famcov'}),
+      Chip('famcov', 'Parents', {group:'famcov'}),
+      Chip('famcov', 'None/Unsure', {group:'famcov'}),
+    ]),
+  ]);
+});
+
+steps.push(function Step4(){
+  return el('div', {class:'q'}, [
+    el('h2', {html:'Debt & spending style'}),
+    el('p', {html:'No amounts needed—just taps.'}),
+    el('label', {class:'small', html:'Debts you currently have'}),
+    el('div', {class:'row'}, [
+      Chip('debts', 'Credit card', {group:'debts'}),
+      Chip('debts', 'Personal/Salary', {group:'debts'}),
+      Chip('debts', 'Auto', {group:'debts'}),
+      Chip('debts', 'Home', {group:'debts'}),
+      Chip('debts', 'None', {group:'debts'}),
+    ]),
+    el('div', {class:'hr'}),
+    el('label', {class:'small', html:'Card habit'}),
+    el('div', {class:'row'}, [
+      Chip('cardhabit', 'Pay in full monthly', {multi:false, group:'cardhabit'}),
+      Chip('cardhabit', 'Carry a balance', {multi:false, group:'cardhabit'}),
+      Chip('cardhabit', 'No credit card', {multi:false, group:'cardhabit'}),
+    ]),
+    el('div', {class:'hr'}),
+    el('label', {class:'small', html:'Budget style'}),
+    el('div', {class:'row'}, [
+      Chip('budget', '50-30-20', {multi:false, group:'budget'}),
+      Chip('budget', '50-20-30', {multi:false, group:'budget'}),
+      Chip('budget', '50-10-40', {multi:false, group:'budget'}),
+      Chip('budget', "I don't budget", {multi:false, group:'budget'}),
+    ]),
+  ]);
+});
+
+steps.push(function Step5(){
+  return el('div', {class:'q'}, [
+    el('h2', {html:'Goals — pick up to 3'}),
+    el('p', {html:'What\'s most relevant right now?'}),
+    el('div', {class:'row', id:'goals-row'}, [
+      Chip('goals', 'Protect my income', {group:'goals'}),
+      Chip('goals', 'Kids\' education', {group:'goals'}),
+      Chip('goals', 'Retirement plan', {group:'goals'}),
+      Chip('goals', 'Emergency fund', {group:'goals'}),
+      Chip('goals', 'Investing', {group:'goals'}),
+      Chip('goals', 'Parents\' health cover', {group:'goals'}),
+      Chip('goals', 'Buy a home', {group:'goals'}),
+      Chip('goals', 'Travel lifestyle', {group:'goals'}),
+    ]),
+    el('div', {class:'small', html:'(We\'ll prioritize these in your summary.)'}),
+  ]);
+});
+
+steps.push(function Step6(){
+  return el('div', {class:'q'}, [
+    el('h2', {html:'Retirement & investing vibe'}),
+    el('p', {html:'Quick feel, no commitments.'}),
+    el('label', {class:'small', html:'Target retirement age (closest)'}),
+    el('div', {class:'row'}, [
+      Chip('retire', '50s', {multi:false, group:'retire'}),
+      Chip('retire', '60s', {multi:false, group:'retire'}),
+      Chip('retire', '70s', {multi:false, group:'retire'}),
+      Chip('retire', 'Unsure', {multi:false, group:'retire'}),
+    ]),
+    el('div', {class:'hr'}),
+    el('label', {class:'small', html:'Risk comfort'}),
+    el('div', {class:'row'}, [
+      Chip('risk', 'Low', {multi:false, group:'risk'}),
+      Chip('risk', 'Medium', {multi:false, group:'risk'}),
+      Chip('risk', 'High', {multi:false, group:'risk'}),
+    ]),
+    el('div', {class:'hr'}),
+    el('label', {class:'small', html:'Investing experience'}),
+    el('div', {class:'row'}, [
+      Chip('iexp', 'New', {multi:false, group:'iexp'}),
+      Chip('iexp', 'Some', {multi:false, group:'iexp'}),
+      Chip('iexp', 'Experienced', {multi:false, group:'iexp'}),
+    ]),
+  ]);
+});
+
+// Step 7: Consult preference (to populate consult/channel/contact/best_time)
+steps.push(function Step7(){
+  return el('div', {class:'q'}, [
+    el('h2', {html:'Would you like a quick consult?'}),
+    el('p', {html:'Optional. If no, just finish.'}),
+    el('label', {class:'small', html:'Consult preference'}),
+    el('div', {class:'row'}, [
+      Chip('consult', 'Yes', {multi:false, group:'consult'}),
+      Chip('consult', 'No', {multi:false, group:'consult'}),
+      Chip('consult', 'Maybe later', {multi:false, group:'consult'}),
+    ]),
+    el('div', {class:'hr'}),
+    el('label', {class:'small', html:'Preferred channel (optional)'}),
+    el('div', {class:'row'}, [
+      Chip('channel', 'Email', {multi:false, group:'channel'}),
+      Chip('channel', 'Phone', {multi:false, group:'channel'}),
+      Chip('channel', 'Viber/WhatsApp', {multi:false, group:'channel'}),
+    ]),
+    el('div', {class:'grid'}, [
+      el('div', {}, [
+        el('label', {class:'small', html:'Contact (email or mobile) — optional'}),
+        el('input', {class:'input', placeholder:'e.g., name@company.com or 0917...', value:nv(data.contact), oninput:e=>{data.contact=e.target.value; saveLocal(data);}})
+      ]),
+      el('div', {}, [
+        el('label', {class:'small', html:'Best time to reach you — optional'}),
+        el('input', {class:'input', placeholder:'e.g., Weekday evenings', value:nv(data.best_time), oninput:e=>{data.best_time=e.target.value; saveLocal(data);}})
+      ])
+    ])
+  ]);
+});
+
+// Helper enforcing submission rule C
+function canSubmit(consent, first_name, contact){
+  const hasIdentity = (first_name && String(first_name).trim().length>0) || (contact && String(contact).trim().length>0);
+  if(consent===true) return true; // consent given -> allowed
+  return !hasIdentity; // no consent -> only allowed if anonymous
+}
+
+// Final step: summary + actions
+steps.push(function Done(){
+  const chosenGoals = (data.goals||[]).slice(0,3);
+  const summary = {
+    Name: data.anonymous? '(anonymous)' : (nv(data.first_name)),
+    Email: nv(data.email),
+    Consent: !!data.consent,
+    Relationship: nv(data.status),
+    Dependents: nv(data.dependents),
+    Work: nv(data.work),
+    6mo_Buffer: nv(data.buffer),
+    Emergency_Fund: (data.efund||[]).join(' / '),
+    Benefits: (data.benefits||[]).join(' / '),
+    Life_Insurance: (data.life||[]).join(' / '),
+    Other_Coverages: (data.covers||[]).join(' / '),
+    Family_Covered: (data.famcov||[]).join(' / '),
+    Debts: (data.debts||[]).join(' / '),
+    Card_Habit: nv(data.cardhabit),
+    Budget_Style: nv(data.budget),
+    Top_Goals: chosenGoals.join(' / '),
+    Retirement: nv(data.retire),
+    Risk: nv(data.risk),
+    Investing_Experience: nv(data.iexp),
+    Consult: nv(data.consult),
+    Channel: nv(data.channel),
+    Contact: nv(data.contact),
+    Best_Time: nv(data.best_time),
+    Context: data.context || WORKSHOP,
+    Timestamp: data.timestamp
+  };
+
+  if(Array.isArray(data.goals) && data.goals.length>3) data.goals = data.goals.slice(0,3);
+
+  const pre = el('pre', {html: Object.entries(summary).map(([k,v])=>`${k}: ${v||''}`).join('\n') });
+
+  const onCopy = async()=>{
+    try{ await navigator.clipboard.writeText(pre.textContent); toast('Summary copied'); }
+    catch(e){ const ta = el('textarea', {style:'position:fixed;left:-9999px;top:-9999px'}); ta.value = pre.textContent; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Summary copied'); }
+  }
+
+  const onEmail = ()=>{
+    const to = data.email || '';
+    const subject = encodeURIComponent(`[${WORKSHOP}] Your questionnaire summary`);
+    const body = encodeURIComponent(pre.textContent + "\n\n— Sent from the VML workshop questionnaire");
+    window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
+  }
+
+  const onCSV = ()=>{ download('vml-questionnaire.csv', toCSV(summary)); }
+
+  const onSend = async()=>{
+    if(!canSubmit(data.consent, data.first_name, data.contact)){
+      toast('To submit: turn on consent, or remove name/contact to submit anonymously.');
+      return;
+    }
+    if(!WEBHOOK_URL){ toast('Set WEBHOOK_URL in code to enable submit'); return; }
+    try{
+      const res = await fetch(WEBHOOK_URL, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(summary)});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      toast('Sent OK');
+    }catch(err){ console.error(err); toast('Send failed'); }
+  }
+
+  const submitBtn = el('button', {class:'btn primary', onclick:onSend, html:'Submit to organizer'});
+  if(!canSubmit(data.consent, data.first_name, data.contact)){
+    submitBtn.setAttribute('disabled','');
+    submitBtn.title = 'Turn on consent or remove name/contact to submit anonymously';
+  }
+
+  return el('div', {class:'q summary'}, [
+    el('h2', {html: 'You\'re done! Here\'s your summary'}),
+    el('p', {html: 'Save or send this to yourself. If you consented, you can share with the speaker for personalized guidance.'}),
+    pre,
+    el('div', {class:'btns'}, [
+      el('button', {class:'btn', onclick:onCopy, html:'Copy summary'}),
+      el('button', {class:'btn', onclick:onCSV, html:'Download CSV'}),
+      el('button', {class:'btn', onclick:onEmail, html:'Email to me'}),
+      submitBtn,
+    ]),
+    el('div', {class:'footnote', html:'Tip: Keep your browser tab open to show this summary at the end of the workshop.'})
+  ]);
+});
+
+/*******************
+ * FLOW / RENDER
+ *******************/
+function enforceGoalLimit(){
+  const max = 3; const arr = data.goals||[];
+  if(arr.length>max){ data.goals = arr.slice(0,max); saveLocal(data); }
+  const row=$('#goals-row'); if(!row) return;
+  const atLimit = (data.goals||[]).length >= max;
+  row.querySelectorAll('.chip').forEach(ch=>{
+    const checked = ch.dataset.checked==='true';
+    ch.style.opacity = (!checked && atLimit) ? .5 : 1;
+    ch.style.pointerEvents = (!checked && atLimit) ? 'none' : 'auto';
+  });
+}
+
+function render(){
+  const container = $('#stage');
+  container.innerHTML = '';
+  const node = steps[step]();
+  container.append(node);
+  if(step===5) enforceGoalLimit();
+  const nav = el('div', {class:'btns'}, [
+    el('button', {class:'btn ghost', onclick:()=>{ step=Math.max(0, step-1); updateBar(); render(); }, html:'Back'}),
+    el('div', {style:'flex:1'}),
+    el('button', {class:'btn', onclick:()=>{ step++; updateBar(); if(step<steps.length-1) render(); else renderDone(); }, html:'Skip'}),
+    el('button', {class:'btn primary', onclick:()=>{ step++; updateBar(); if(step<steps.length-1) render(); else renderDone(); }, html:(step<steps.length-1?'Next':'Finish')})
+  ]);
+  container.append(nav);
+}
+
+function renderDone(){
+  const container = $('#stage');
+  container.innerHTML = '';
+  container.append( steps[steps.length-1]() );
+  updateBar(100);
+}
+
+function updateBar(val){
+  const pct = (typeof val==='number') ? val : Math.round((step)/(steps.length-1)*100);
+  $('#bar').style.width = Math.min(100, Math.max(0,pct)) + '%';
+}
+
+// simple test harness (run with #test or ?test=1)
+function runTests(){
+  let pass=0, fail=0;
+  const assert=(cond,msg)=>{ if(cond){ pass++; } else { fail++; console.error('TEST FAIL:', msg); }}
+
+  // sanitizeText
+  const s = sanitizeText('<script>x</script>✅\u0007');
+  assert(!/[<>]/.test(s) && s.indexOf('script')>=0, 'sanitizeText should escape angle brackets');
+
+  // toCSV
+  const csv = toCSV({a:null,b:'X\nY',c:'<tag>'});
+  assert(csv.split('\n').length===2, 'toCSV should produce header + one row');
+
+  // enforceGoalLimit
+  data.goals = ['A','B','C','D']; enforceGoalLimit();
+  assert(data.goals.length===3, 'enforceGoalLimit should cap goals to 3');
+
+  // Chip toggle exclusive
+  const testChip = Chip('test','A',{multi:false, group:'testg'});
+  document.body.appendChild(testChip); const before = testChip.dataset.checked; testChip.click(); const after = testChip.dataset.checked; testChip.remove();
+  assert(before!==after, 'Chip should toggle checked state on click');
+
+  // Rule C: consent or anonymous
+  assert(canSubmit(false,'','')===true, 'No consent + anonymous should pass');
+  assert(canSubmit(false,'Alex','')===false, 'No consent + name should fail');
+  assert(canSubmit(false,'','0917xxxxxxx')===false, 'No consent + contact should fail');
+  assert(canSubmit(true,'Alex','')===true, 'Consent + identity should pass');
+
+  const msg = `Self-check: ${pass} passed, ${fail} failed`;
+  console.log(msg);
+  toast(msg);
+}
+
+// init
+function init(){
+  try{
+    if(!data.timestamp) data.timestamp = new Date().toISOString();
+    saveLocal(data);
+    updateBar();
+    render();
+    if(TEST_MODE) runTests();
+  }catch(err){
+    console.error(err);
+    toast('Init error: '+ (err && err.message ? err.message : 'unknown'));
+  }
+}
+
+document.addEventListener('click', (e)=>{
+  if(e.target.closest && e.target.closest('#goals-row')) enforceGoalLimit();
+});
+
+init();
+</script>
+</body>
+</html>
