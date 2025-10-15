@@ -244,12 +244,37 @@ const FinancialQuestionnaire = () => {
   const saveImage = async () => {
     if (!resultRef.current) return;
     try {
-      const { toPng } = await import('html-to-image'); // lazy-load
+      const { toBlob, toPng } = await import('html-to-image');
+  
+      // 1) Render to blob (best for Web Share with files)
+      let blob = await toBlob(resultRef.current, { cacheBust: true, pixelRatio: 2 });
+  
+      // 2) If iOS can share files, open Share Sheet (Photos → "Save Image")
+      if (blob && navigator.canShare && window.File) {
+        const file = new File([blob], `${answers.name || 'your'}-coverage-map.png`, { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'Your Coverage Map',
+            text: 'Here’s my financial coverage map.'
+          });
+          return; // done
+        }
+      }
+  
+      // 3) Fallback: open the image in a new tab (user taps Share → Save Image)
       const dataUrl = await toPng(resultRef.current, { cacheBust: true, pixelRatio: 2 });
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = `${answers.name || 'your'}-coverage-map.png`;
-      a.click();
+      const win = window.open();
+      if (win) {
+        win.document.write(`<img src="${dataUrl}" style="width:100%;height:auto" />`);
+        win.document.title = 'Coverage Map';
+      } else {
+        // final fallback: trigger a download (lands in Files app)
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = `${answers.name || 'your'}-coverage-map.png`;
+        a.click();
+      }
     } catch (e) {
       console.error('Save image failed', e);
     }
