@@ -613,7 +613,7 @@ const FinancialQuestionnaire = () => {
             {/* NEW: top concern pill */}
             {answers.topConcern && (
               <span className="inline-block mt-4 text-sm font-medium bg-white/15 backdrop-blur px-3 py-1 rounded-full">
-                We’ll prioritize: {answers.topConcern}
+                Your top concern: {answers.topConcern}
               </span>
             )}
           </div>
