@@ -123,7 +123,7 @@ const FinancialQuestionnaire = () => {
       question: 'How does college funding feel?',
       subtitle: 'Go with your gut',
       type: 'choice',
-      options: ['Feels covered', 'Saving but not there yet', 'Not yet'],
+      options: ['Feels covered', 'Saving but not there yet', 'Haven’t started yet'],
       showIf: (a) => a.hasKids === 'Yes'
     },
   
@@ -234,12 +234,12 @@ const FinancialQuestionnaire = () => {
     // Education
     let education; // undefined means "don’t show tile"
     if (answers.hasKids === 'Yes') {
-      switch (answers.educationConfidence) {
-        case 'Feels covered':               education = 'Covered'; break;
-        case 'Saving but not there yet':    education = 'Work in Progress'; break;
-        case 'Not yet':                     education = 'Gap'; break;
-        default:                            education = undefined; // unanswered → hide
-      }
+      const ec = answers.educationConfidence;
+      education =
+        ec === 'Feels covered' ? 'Covered' :
+        ec === 'Making progress' ? 'Work in Progress' :
+        (ec === 'Haven’t started yet' || ec === 'Not yet') ? 'Gap' : // fallback for older rows
+        undefined; // unanswered → hide tile
     }
   
     // Income protection via vibe check (fallback to old logic if missing)
