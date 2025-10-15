@@ -212,7 +212,7 @@ const FinancialQuestionnaire = () => {
     // 👉 New top rule: truly at square one
     if (covered === 0 && gaps >= 3) {
       return {
-        name: 'Getting Started',
+        name: 'Foundation Builder',
         lines: [
           "You’re fresh on the journey—perfect time to set the basics right.",
           "We’ll lock in safety nets first so every next step feels easier."
