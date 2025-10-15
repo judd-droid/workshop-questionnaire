@@ -54,7 +54,7 @@ const FinancialQuestionnaire = () => {
     },
     { id: 'retirementPlan', question: "Are you actively saving for retirement?", type: 'choice',
       options: ['Yes, regularly', 'Occasionally', 'Not yet', "What's a retirement plan? 😅"] },
-    { id: 'emergencyFund', question: "Do you have an emergency fund?", subtitle: "3-6 months of expenses saved", type: 'choice',
+    { id: 'emergencyFund', question: "Do you have an emergency fund?", subtitle: "3-6 months of expenses d", type: 'choice',
       options: ['Yes, fully funded', 'Working on it', 'Not yet', 'Emergency... what?'] },
     { id: 'debtSituation', question: "How's your debt situation?", type: 'choice',
       options: ['Debt-free! 🎉', 'Manageable', 'Bit stressed about it', 'Prefer not to say'] },
