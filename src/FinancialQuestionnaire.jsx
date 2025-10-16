@@ -435,40 +435,58 @@ const FinancialQuestionnaire = () => {
   const saveImage = async () => {
     if (!resultRef.current) return;
     try {
-      const { toBlob, toPng } = await import('html-to-image');
+      const { toBlob } = await import('html-to-image');
   
-      // 1) Render to blob (best for Web Share with files)
-      let blob = await toBlob(resultRef.current, { cacheBust: true, pixelRatio: 2 });
+      // Render at device pixel ratio for sharpness, white bg to avoid transparent PNGs
+      const blob = await toBlob(resultRef.current, {
+        cacheBust: true,
+        pixelRatio: Math.min(2, window.devicePixelRatio || 1), // very high DPR can make huge files; cap at 2
+        backgroundColor: '#ffffff'
+      });
+      if (!blob) throw new Error('Failed to create image');
   
-      // 2) If iOS can share files, open Share Sheet (Photos → "Save Image")
-      if (blob && navigator.canShare && window.File) {
-        const file = new File([blob], `${answers.name || 'your'}-coverage-map.png`, { type: 'image/png' });
-        if (navigator.canShare({ files: [file] })) {
+      const filename = `${(answers?.name || 'your')
+        .toString()
+        .trim()
+        .replace(/\s+/g, '-')}-coverage.png`;
+  
+      // 1) Best: native share (Android Chrome supports sharing files)
+      // Requires Web Share Level 2 (navigator.canShare + files)
+      if ('canShare' in navigator && 'share' in navigator) {
+        const file = new File([blob], filename, { type: 'image/png' });
+        if (navigator.canShare?.({ files: [file] })) {
           await navigator.share({
             files: [file],
-            title: 'Your Coverage Map',
-            text: 'Here’s my financial coverage map.'
+            title: 'My Financial Coverage Snapshot',
+            text: 'Here’s my coverage snapshot.'
           });
-          return; // done
+          return;
         }
       }
   
-      // 3) Fallback: open the image in a new tab (user taps Share → Save Image)
-      const dataUrl = await toPng(resultRef.current, { cacheBust: true, pixelRatio: 2 });
-      const win = window.open();
+      // 2) Good fallback: open image in a new tab -> user taps & holds to save
+      // (Works well on Android Chrome)
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, '_blank');
       if (win) {
-        win.document.write(`<img src="${dataUrl}" style="width:100%;height:auto" />`);
-        win.document.title = 'Coverage Map';
-      } else {
-        // final fallback: trigger a download (lands in Files app)
-        const a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = `${answers.name || 'your'}-coverage-map.png`;
-        a.click();
+        // Revoke later to avoid memory leak
+        setTimeout(() => URL.revokeObjectURL(url), 30_000);
+        return;
       }
+  
+      // 3) Last resort: fake <a download>
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
     } catch (e) {
       console.error('Save image failed', e);
+      alert('Could not create the image on this device. Try opening in a new tab and saving from there.');
     }
+
   };
 
   // --------------------------
