@@ -622,7 +622,7 @@ const FinancialQuestionnaire = () => {
             {/* Covered */}
             {coveredTiles.length > 0 && (
               <section>
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Congratulations with these:</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">Congratulations with:</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {coveredTiles.map(t => <CoverageTile key={t.key} label={t.label} state={t.state} />)}
                 </div>
@@ -632,7 +632,7 @@ const FinancialQuestionnaire = () => {
             {/* Needs help */}
             {needsTiles.length > 0 && (
               <section>
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">I can help you with these:</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">I can help you with:</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {needsTiles.map(t => <CoverageTile key={t.key} label={t.label} state={t.state} />)}
                 </div>
