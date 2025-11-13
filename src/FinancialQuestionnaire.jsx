@@ -779,7 +779,7 @@ const FinancialQuestionnaire = () => {
 
         {/* Brand Footer */}
         <div className="text-center mt-6 text-gray-500 text-sm">
-          VML Financial Wellness Workshop
+          Supernova Financial Wellness Workshop
         </div>
       </div>
     </div>
