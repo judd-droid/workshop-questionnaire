@@ -500,7 +500,7 @@ const FinancialQuestionnaire = () => {
     ];
   
     const openFacebook = () => {
-      const webUrl = 'https://www.facebook.com/jo.c.navarro';
+      const webUrl = 'https://www.facebook.com/markley.villarin';
       const appUrl = `fb://facewebmodal/f?href=${encodeURIComponent(webUrl)}`;
       const start = Date.now();
       window.location.href = appUrl;
