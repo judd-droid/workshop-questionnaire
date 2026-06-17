@@ -596,14 +596,43 @@ const FinancialQuestionnaire = () => {
               </button>
   
               {bookingStatus === 'sent' && (
-                <button
-                  onClick={openFacebook}
-                  className="w-full px-5 py-3 rounded-xl border-2 text-[#1877F2] border-[#1877F2] bg-[#1877F2]/10 hover:bg-[#1877F2]/20 transition font-semibold flex items-center justify-center gap-2"
-                  title="Open my Facebook profile"
-                >
-                  <Facebook className="w-5 h-5" />
-                  Add me on Facebook too!
-                </button>
+                <>
+                  <a
+                    href="https://www.aia.com.ph/en/contenthub/index/brandingAndCompanyNews/The_Ultimate_K_Pop_Experience_Awaits"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full rounded-2xl overflow-hidden border-2 border-rose-300 bg-gradient-to-br from-rose-50 to-amber-50 hover:shadow-lg transition block"
+                  >
+                    <img
+                      src="/southkorearaffle.jpg"
+                      alt="Win a K-Pop trip to South Korea"
+                      className="w-full h-auto block"
+                    />
+                    <div className="p-4">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-rose-600 mb-1">
+                        Bonus — limited-time promo
+                      </div>
+                      <div className="font-bold text-gray-900 mb-1">
+                        Win a trip to South Korea 🇰🇷
+                      </div>
+                      <div className="text-sm text-gray-600 mb-3">
+                        As an AIA prospect, you qualify for the K-Pop trip raffle. Just fill in this quick form to lock in your entry.
+                      </div>
+                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 text-white font-semibold text-sm">
+                        Claim my raffle entry →
+                      </div>
+                    </div>
+                  </a>
+
+                  <button
+                    onClick={openFacebook}
+                    className="w-full px-5 py-3 rounded-xl border-2 text-[#1877F2] border-[#1877F2] bg-[#1877F2]/10 hover:bg-[#1877F2]/20 transition font-semibold flex items-center justify-center gap-2"
+                    title="Open my Facebook profile"
+                  >
+                    <Facebook className="w-5 h-5" />
+                    Add me on Facebook too!
+                  </button>
+                </>
               )}
             </div>
   
