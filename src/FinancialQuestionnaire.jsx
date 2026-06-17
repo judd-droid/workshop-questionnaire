@@ -598,7 +598,7 @@ const FinancialQuestionnaire = () => {
               {bookingStatus === 'sent' && (
                 <>
                   <a
-                    href="https://www.aia.com.ph/en/contenthub/index/brandingAndCompanyNews/The_Ultimate_K_Pop_Experience_Awaits"
+                    href="https://www.aia.com.ph/en/contenthub/index/brandingAndCompanyNews/The_Ultimate_K_Pop_Experience_Awaits?desc1-139868&fbclid=IwY2xjawSe1MVleHRuA2FlbQIxMQBzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEeFLMleajk0j5Q2jnq2Nw5eECZoa9AkDhWRSYOQaKQEBbjzFxXqiIPuX5tIAQ_aem_a9hNxwHQ8vdaG7U9u_dIwA"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full rounded-2xl overflow-hidden border-2 border-rose-300 bg-gradient-to-br from-rose-50 to-amber-50 hover:shadow-lg transition block"
@@ -616,7 +616,7 @@ const FinancialQuestionnaire = () => {
                         Win a trip to South Korea 🇰🇷
                       </div>
                       <div className="text-sm text-gray-600 mb-3">
-                        As an AIA prospect, you qualify for the K-Pop trip raffle. Just fill in this quick form to lock in your entry.
+                        Once we conduct our first meeting, you qualify for the K-Pop trip raffle. Fill in this quick form to lock in your entry.
                       </div>
                       <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 text-white font-semibold text-sm">
                         Claim my raffle entry →
