@@ -150,8 +150,7 @@ const FinancialQuestionnaire = () => {
       question: "How does your retirement saving feel?",
       subtitle: "Go with your gut",
       type: 'choice',
-      options: ['Feels on track', 'Making a start', "Haven't started"],
-      showIf: (a) => a.retirementPlan !== ''
+      options: ['Feels on track', 'Making a start', "Haven't started"]
     },
   
     { id: 'emergencyFund', question: "Do you have an emergency fund?",
@@ -237,7 +236,7 @@ const FinancialQuestionnaire = () => {
       const ec = answers.educationConfidence;
       education =
         ec === 'Feels covered' ? 'Covered' :
-        ec === 'Making progress' ? 'Work in Progress' :
+        ec === 'Saving but not there yet' ? 'Work in Progress' :
         (ec === 'Haven’t started yet' || ec === 'Not yet') ? 'Gap' : // fallback for older rows
         undefined; // unanswered → hide tile
     }
@@ -300,8 +299,8 @@ const FinancialQuestionnaire = () => {
       answers.topConcern === 'Growing my money' ||
       answers.topConcern === 'Planning for the future';
 
-    // Nearly complete — one gap left
-    if (covered >= 4 && gaps === 1) {
+    // Nearly complete — one gap left (WIP tiles allowed)
+    if (covered >= 4 && gaps <= 1) {
       return {
         name: 'Balanced Strategist',
         lines: [
@@ -390,7 +389,20 @@ const FinancialQuestionnaire = () => {
       };
     }
   
-    // 6) Some wins, some gaps → build momentum
+    // 6) Young, mostly WIP, no acute gaps → reward the slow-but-steady builders
+    const isYoung = answers.ageRange === '20-29' || answers.ageRange === '30-39';
+    if (isYoung && covered <= 1 && gaps <= 1 && wip >= 3) {
+      return {
+        name: 'Free-Spirited Builder',
+        lines: [
+          "You’re living in the moment — and quietly laying foundations too.",
+          "We’ll keep your YOLO energy with smart safety nets behind it."
+        ],
+        gradient: 'from-violet-500 to-fuchsia-500'
+      };
+    }
+
+    // 7) Some wins, some gaps → build momentum
     if (covered >= 1 && gaps >= 1) {
       return {
         name: 'Momentum Starter',
@@ -402,7 +414,7 @@ const FinancialQuestionnaire = () => {
       };
     }
   
-    // 7) Default
+    // 8) Default fallback
     return {
       name: 'Free-Spirited Builder',
       lines: [
