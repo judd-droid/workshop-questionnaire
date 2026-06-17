@@ -567,12 +567,12 @@ const FinancialQuestionnaire = () => {
             </div>
   
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col gap-3">
               <button
                 onClick={submitBooking}
                 disabled={!canSubmitBooking || bookingStatus !== 'idle'}
                 aria-busy={bookingStatus === 'sending'}
-                className={`flex-1 px-5 py-3 rounded-xl font-semibold transition
+                className={`w-full px-5 py-3 rounded-xl font-semibold transition
                   ${bookingStatus === 'sending' ? 'bg-indigo-300 text-white cursor-wait'
                     : bookingStatus === 'sent' ? 'bg-emerald-600 text-white'
                     : canSubmitBooking ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg hover:scale-[1.01]'
@@ -583,14 +583,16 @@ const FinancialQuestionnaire = () => {
                   : 'Text me the plan'}
               </button>
   
-              <button
-                onClick={openFacebook}
-                className="flex-1 px-5 py-3 rounded-xl border-2 text-[#1877F2] border-[#1877F2] bg-[#1877F2]/10 hover:bg-[#1877F2]/20 transition font-semibold flex items-center justify-center gap-2"
-                title="Open my Facebook profile"
-              >
-                <Facebook className="w-5 h-5" />
-                Add me on Facebook!
-              </button>
+              {bookingStatus === 'sent' && (
+                <button
+                  onClick={openFacebook}
+                  className="w-full px-5 py-3 rounded-xl border-2 text-[#1877F2] border-[#1877F2] bg-[#1877F2]/10 hover:bg-[#1877F2]/20 transition font-semibold flex items-center justify-center gap-2"
+                  title="Open my Facebook profile"
+                >
+                  <Facebook className="w-5 h-5" />
+                  Add me on Facebook too!
+                </button>
+              )}
             </div>
   
             {/* Error note only */}
