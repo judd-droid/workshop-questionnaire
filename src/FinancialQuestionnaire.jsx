@@ -512,7 +512,7 @@ const FinancialQuestionnaire = () => {
     ];
   
     const openFacebook = () => {
-      const webUrl = 'https://www.facebook.com/yayromero';
+      const webUrl = 'https://www.facebook.com/jo.c.navarro';
       const appUrl = `fb://facewebmodal/f?href=${encodeURIComponent(webUrl)}`;
       const start = Date.now();
       window.location.href = appUrl;
@@ -598,7 +598,7 @@ const FinancialQuestionnaire = () => {
               {bookingStatus === 'sent' && (
                 <>
                   <a
-                    href="https://www.aia.com.ph/en/contenthub/index/brandingAndCompanyNews/The_Ultimate_K_Pop_Experience_Awaits?desc1-139868&fbclid=IwY2xjawSe1MVleHRuA2FlbQIxMQBzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEeFLMleajk0j5Q2jnq2Nw5eECZoa9AkDhWRSYOQaKQEBbjzFxXqiIPuX5tIAQ_aem_a9hNxwHQ8vdaG7U9u_dIwA"
+                    href="https://www.aia.com.ph/en/contenthub/index/brandingAndCompanyNews/The_Ultimate_K_Pop_Experience_Awaits?desc1-139881&fbclid=IwY2xjawSuOf5leHRuA2FlbQIxMQBzcnRjBmFwcF9pZBAyMjIwMzkxNzg4MjAwODkyAAEePJVQzUMM7BrK0bx61iNr7_1a_5261JVgSqZNZfyxFWN14eiW_NWK7-hH7tI_aem_TTViVqC9CTXvOBSnxWXBTg"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full rounded-2xl overflow-hidden border-2 border-rose-300 bg-gradient-to-br from-rose-50 to-amber-50 hover:shadow-lg transition block"
